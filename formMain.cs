@@ -91,7 +91,7 @@ namespace StepTestSystem
             double slopM = 0;
             double YcutB = 0;
 
-            double age = Convert.ToDouble(ageTB.Text.ToString());
+            double age = Convert.ToDouble(txtAge.Text.ToString());
             double MaxHR = 220 - age;
             double HR80percent = MaxHR * 0.8;
             double HR50percent = MaxHR * 0.5;
@@ -109,33 +109,33 @@ namespace StepTestSystem
             double[] YHRperMin = new double[5];
 
 
-            string StepSize = stepLB.SelectedItem.ToString();
+            string StepSize = lstStepSize.SelectedItem.ToString();
 
             if (string.Compare(StepSize, "15 cm") == 0)
             {
-                surnameTB.Text = "15 cm";
+                txtSurname.Text = "15 cm";
                 Array.Copy(XaeroCap15cm, XaeroCapCur, 5);
             }
             else if (string.Compare(StepSize, "20 cm") == 0)
             {
-                surnameTB.Text = "20 cm";
+                txtSurname.Text = "20 cm";
                 Array.Copy(XaeroCap20cm, XaeroCapCur, 5);
             }
             else if (string.Compare(StepSize, "25 cm") == 0)
             {
-                surnameTB.Text = "25 cm";
+                txtSurname.Text = "25 cm";
                 Array.Copy(XaeroCap25cm, XaeroCapCur, 5);
             }
             else
             {
-                surnameTB.Text = "30 cm";
+                txtSurname.Text = "30 cm";
                 Array.Copy(XaeroCap30cm, XaeroCapCur, 5);
             }
 
             //////////////////////////////////////////////////
             double number;
 
-            if (double.TryParse(step1TB.Text.ToString(), out number))
+            if (double.TryParse(txtStep1.Text.ToString(), out number))
             {
                 YHRperMin[0] = number;
             }
@@ -144,7 +144,7 @@ namespace StepTestSystem
                 YHRperMin[0] = -1;
             }
 
-            if (double.TryParse(step2TB.Text.ToString(), out number))
+            if (double.TryParse(txtStep2.Text.ToString(), out number))
             {
                 YHRperMin[1] = number;
             }
@@ -153,7 +153,7 @@ namespace StepTestSystem
                 YHRperMin[1] = -1;
             }
 
-            if (double.TryParse(step3TB.Text.ToString(), out number))
+            if (double.TryParse(txtStep3.Text.ToString(), out number))
             {
                 YHRperMin[2] = number;
             }
@@ -162,7 +162,7 @@ namespace StepTestSystem
                 YHRperMin[2] = -1;
             }
 
-            if (double.TryParse(step4TB.Text.ToString(), out number))
+            if (double.TryParse(txtStep4.Text.ToString(), out number))
             {
                 YHRperMin[3] = number;
             }
@@ -171,7 +171,7 @@ namespace StepTestSystem
                 YHRperMin[3] = -1;
             }
 
-            if (double.TryParse(step5TB.Text.ToString(), out number))
+            if (double.TryParse(txtStep5.Text.ToString(), out number))
             {
                 YHRperMin[4] = number;
             }
@@ -252,16 +252,16 @@ namespace StepTestSystem
             AeroCap = (MaxHR - YcutB) / slopM;
 
             bool sex = true;
-            if (maleRB.Checked == true)
+            if (rdbMale.Checked == true)
             {
                 sex = false;
             }
 
             fitnessRating = getFitnessRating((int)age, sex, (int)AeroCap);
-            fitnessRatingTB.Text = fitnessRating;
+            lblFitnessRating.Text = fitnessRating;
 
 
-            aeroCapTB.Text = AeroCap.ToString();
+            lblAeroCap.Text = AeroCap.ToString("0.00");
 
             
 
@@ -276,7 +276,7 @@ namespace StepTestSystem
         private void cmd_storeData_Click(object sender, EventArgs e)
         {
             String gender = "";
-            if(femaleRB.Checked)
+            if(rdbFemale.Checked)
             { 
                 gender = "Female";
             }
@@ -284,22 +284,78 @@ namespace StepTestSystem
             {
                 gender="Male";
             }
+
+            int last_test_ID = -1;
+
             using (conn = new MySql.Data.MySqlClient.MySqlConnection(connString))
             {
                 conn.Open();
-                queryStr = "INSERT INTO db_step_test_system.participant_details (part_firstName, part_surname," +
-                    "part_age, part_gender, testers_initials)" +
-                "VALUES('" + firstNameTB.Text.ToString() + "','" + surnameTB.Text.ToString() +
-                "','" + Int32.Parse(ageTB.Text.ToString()) + "','"+gender+"','"+remarksTB.Text.ToString() + "')";
+                queryStr = "INSERT INTO db_step_test_system.test_details (test_firstName, test_surname," +
+                    "test_age, test_gender, test_date, test_time)" +
+                    "VALUES('" + txtFirstName.Text.ToString() + "','" + 
+                    txtSurname.Text.ToString() +
+                    "','" + Int32.Parse(txtAge.Text.ToString()) + "','" + gender + "','" + 
+                    datePicker.Value.ToString("yyyy-MM-dd") +
+                    "', CURTIME())";
 
                 //'" + fitnessRatingTB.Text.ToString() + "','" + Int32.Parse(aeroCapTB.Text.ToString())+",
 
                 cmd = new MySqlCommand(queryStr, conn);
                 cmd.ExecuteReader();
 
+                //last inserted id
+                last_test_ID = (Int32)cmd.LastInsertedId;
+                txtRemarks.Text = last_test_ID.ToString();
+
+
                 conn.Close();
 
             }
+
+            using (conn = new MySql.Data.MySqlClient.MySqlConnection(connString))
+            {
+                conn.Open();
+                queryStr = "INSERT INTO db_step_test_system.step_details (step_size, step_HRreading1," +
+                    "step_HRreading2, step_HRreading3, step_HRreading4, step_HRreading5, test_ID)" +
+                    "VALUES('" + lstStepSize.SelectedItem.ToString() + "','" +
+                    Convert.ToDecimal(txtStep1.Text.ToString()) + "','" +
+                    Convert.ToDecimal(txtStep2.Text.ToString()) + "','" +
+                    Convert.ToDecimal(txtStep3.Text.ToString()) + "','" +
+                    Convert.ToDecimal(txtStep4.Text.ToString()) + "','" +
+                    Convert.ToDecimal(txtStep5.Text.ToString()) + "','" +
+                    last_test_ID +"')";
+
+                //'" + fitnessRatingTB.Text.ToString() + "','" + Int32.Parse(aeroCapTB.Text.ToString())+",
+
+                cmd = new MySqlCommand(queryStr, conn);
+                cmd.ExecuteReader();
+
+
+                conn.Close();
+
+            }
+
+            using (conn = new MySql.Data.MySqlClient.MySqlConnection(connString))
+            {
+                conn.Open();
+                queryStr = "INSERT INTO db_step_test_system.result_details (aerobic_capacity," +
+                    "fitness_rating, tester_remarks, test_ID)" +
+                    "VALUES('" + 
+                    Convert.ToDouble(lblAeroCap.Text.ToString()) + "','" +
+                    (lblFitnessRating.Text.ToString()) + "','" +
+                    (txtRemarks.Text.ToString()) + "','" +
+                    last_test_ID + "')";
+
+                
+
+                cmd = new MySqlCommand(queryStr, conn);
+                cmd.ExecuteReader();
+
+
+                conn.Close();
+
+            }
+
         }
         /// <summary>
         /// /////////////////////////////////////////////////////////////////////////////////////
@@ -311,19 +367,19 @@ namespace StepTestSystem
             slopMglobal = -50;
             YcutBglobal = -50;
 
-            firstNameTB.Text = "";
-            surnameTB.Text = "";
-            femaleRB.Checked = false;
-            maleRB.Checked = true;
-            ageTB.Text = "";
-            remarksTB.Text = "";
-            step1TB.Text = "";
-            step2TB.Text = "";
-            step3TB.Text = "";
-            step4TB.Text = "";
-            step5TB.Text = "";
-            fitnessRatingTB.Text = "";
-            aeroCapTB.Text = "";
+            txtFirstName.Text = "";
+            txtSurname.Text = "";
+            rdbFemale.Checked = false;
+            rdbMale.Checked = true;
+            txtAge.Text = "";
+            txtRemarks.Text = "";
+            txtStep1.Text = "";
+            txtStep2.Text = "";
+            txtStep3.Text = "";
+            txtStep4.Text = "";
+            txtStep5.Text = "";
+            lblFitnessRating.Text = "None";
+            lblAeroCap.Text = "None";
             pictureBox1.Image = Properties.Resources.graph2D_final0;
             //pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
             
@@ -371,9 +427,9 @@ namespace StepTestSystem
             int XoffsetPix = 30;
             int XoffsetGraph = 8;
             int YoffsetGraph = 50;
-            int YtopPix = 185;
+            int YtopPix = 182;
 
-            double age = Convert.ToDouble(ageTB.Text.ToString());
+            double age = Convert.ToDouble(txtAge.Text.ToString());
 
             double MaxHR = 220 - age;
             double HR80percent = MaxHR * 0.8;
@@ -401,26 +457,26 @@ namespace StepTestSystem
             int[] XaeroCapCur = new int[5];
 
 
-            string StepSize = stepLB.SelectedItem.ToString();
+            string StepSize = lstStepSize.SelectedItem.ToString();
 
             if (string.Compare(StepSize, "15 cm") == 0)
             {
-                surnameTB.Text = "15 cm";
+                //surnameTB.Text = "15 cm";
                 Array.Copy(XaeroCap15cm, XaeroCapCur, 5);
             }
             else if (string.Compare(StepSize, "20 cm") == 0)
             {
-                surnameTB.Text = "20 cm";
+                //surnameTB.Text = "20 cm";
                 Array.Copy(XaeroCap20cm, XaeroCapCur, 5);
             }
             else if (string.Compare(StepSize, "25 cm") == 0)
             {
-                surnameTB.Text = "25 cm";
+                //surnameTB.Text = "25 cm";
                 Array.Copy(XaeroCap25cm, XaeroCapCur, 5);
             }
             else
             {
-                surnameTB.Text = "30 cm";
+                //surnameTB.Text = "30 cm";
                 Array.Copy(XaeroCap30cm, XaeroCapCur, 5);
             }
 
@@ -441,21 +497,21 @@ namespace StepTestSystem
 
                 int stepValue;
 
-                if (int.TryParse(step1TB.Text.ToString(), out stepValue))
+                if (int.TryParse(txtStep1.Text.ToString(), out stepValue))
                 {
                     YvalPix = YtopPix - (stepValue - YoffsetGraph) * delYpix;
                     g.DrawEllipse(redPen, XaeroCapCur[0], YvalPix, pointR, pointR);
                     pictureBox1.Refresh();
                 }
 
-                if (int.TryParse(step2TB.Text.ToString(), out stepValue))
+                if (int.TryParse(txtStep2.Text.ToString(), out stepValue))
                 {
                     YvalPix = YtopPix - (stepValue - YoffsetGraph) * delYpix;
 
                     g.DrawEllipse(redPen, XaeroCapCur[1], YvalPix, pointR, pointR);
                     pictureBox1.Refresh();
                 }
-                if (int.TryParse(step3TB.Text.ToString(), out stepValue))
+                if (int.TryParse(txtStep3.Text.ToString(), out stepValue))
                 {
                     YvalPix = YtopPix - (stepValue - YoffsetGraph) * delYpix;
 
@@ -463,14 +519,14 @@ namespace StepTestSystem
                     pictureBox1.Refresh();
 
                 }
-                if (int.TryParse(step4TB.Text.ToString(), out stepValue))
+                if (int.TryParse(txtStep4.Text.ToString(), out stepValue))
                 {
 
                     YvalPix = YtopPix - (stepValue - YoffsetGraph) * delYpix;
                     g.DrawEllipse(redPen, XaeroCapCur[3], YvalPix, pointR, pointR);
                     pictureBox1.Refresh();
                 }
-                if (int.TryParse(step5TB.Text.ToString(), out stepValue))
+                if (int.TryParse(txtStep5.Text.ToString(), out stepValue))
                 {
 
                     YvalPix = YtopPix - (stepValue - YoffsetGraph) * delYpix;
@@ -487,6 +543,12 @@ namespace StepTestSystem
 
                 lowPointX = (int)((lowPointY - YcutBglobal) / slopMglobal);
                 highPointX = (int)((highPointY - YcutBglobal) / slopMglobal);
+
+                if (lowPointX<10)
+                {
+                    lowPointX = 10;
+                    lowPointY = (int)(lowPointX * slopMglobal + YcutBglobal);
+                }
 
                 lowPointYpix = YtopPix - (lowPointY - YoffsetGraph) * delYpix;
                 highPointYpix = YtopPix - (highPointY - YoffsetGraph) * delYpix;
@@ -510,9 +572,9 @@ namespace StepTestSystem
             }
 
 
-            remarksTB.Text = "";
+            /*remarksTB.Text = "";
             remarksTB.Text = "(" + lowPointXpix.ToString() + ", " + lowPointYpix.ToString() + ") " +
-                highPointXpix.ToString() + " " + highPointYpix.ToString();
+                highPointXpix.ToString() + " " + highPointYpix.ToString();*/
 
            
         }
@@ -520,13 +582,13 @@ namespace StepTestSystem
         private void formMain_Load(object sender, EventArgs e)
         {
             pictureBox1.Image = Properties.Resources.graph2D_final0;
-            stepLB.SelectedIndex = 0;
-            maleRB.PerformClick();
-            step1TB.Text = "100";
-            step2TB.Text = "140";
-            step3TB.Text = "160";
-            step4TB.Text = "180";
-            step5TB.Text = "195";
+            lstStepSize.SelectedIndex = 0;
+            rdbMale.PerformClick();
+            txtStep1.Text = "100";
+            txtStep2.Text = "140";
+            txtStep3.Text = "160";
+            txtStep4.Text = "180";
+            txtStep5.Text = "195";
             //pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
         }
         /// <summary>
@@ -535,17 +597,13 @@ namespace StepTestSystem
         /// <param name="sender"></param>
         /// <param name="e"></param>
 
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
 
         private void pictureBox1_Click(object sender, MouseEventArgs e)
         {
             int xCoordinate = e.X;
             int yCoordinate = e.Y;
 
-            firstNameTB.Text = xCoordinate.ToString() + ", " + yCoordinate.ToString();
+            pictureBoxXY.Text = "(" + xCoordinate.ToString() + ", " + yCoordinate.ToString() + ")";
         }
 
         private void surnameLbl_Click(object sender, EventArgs e)
@@ -872,45 +930,47 @@ namespace StepTestSystem
         {
             int number;
 
-            if (firstNameTB.Text.ToString().Length < 1)
+            if (txtFirstName.Text.ToString().Length < 1)
             {
                 return "Please insert the first name!";
             }
-            else if(surnameTB.Text.ToString().Length<1)
-            {
-                surnameTB.Text = firstNameTB.Text.ToString();
-            }
-            else if (ageTB.Text.ToString().Length < 1 || !int.TryParse(ageTB.Text.ToString(), out number))
+            
+            else if (txtAge.Text.ToString().Length < 1 || !int.TryParse(txtAge.Text.ToString(), out number) ||
+                Convert.ToInt32(txtAge.Text.ToString()) < 15 || Convert.ToInt32(txtAge.Text.ToString()) > 65 )
             {
                 return "Invalid age!";
             }      
-            else if (step1TB.Text.ToString().Length>0 && !int.TryParse(step1TB.Text.ToString(), out number))
+            else if (txtStep1.Text.ToString().Length>0 && !int.TryParse(txtStep1.Text.ToString(), out number))
             {
                 return "HR reading for step 1 is not valid!";
             }
 
-            else if (step2TB.Text.ToString().Length > 0 && !int.TryParse(step2TB.Text.ToString(), out number))
+            else if (txtStep2.Text.ToString().Length > 0 && !int.TryParse(txtStep2.Text.ToString(), out number))
             {
                 return "HR reading for step 2 is not valid!";
             }
 
-            else if (step3TB.Text.ToString().Length > 0 && !int.TryParse(step3TB.Text.ToString(), out number))
+            else if (txtStep3.Text.ToString().Length > 0 && !int.TryParse(txtStep3.Text.ToString(), out number))
             {
                 return "Value for step 3 is not valid!";
             }
 
-            else if (step4TB.Text.ToString().Length > 0 && !int.TryParse(step4TB.Text.ToString(), out number))
+            else if (txtStep4.Text.ToString().Length > 0 && !int.TryParse(txtStep4.Text.ToString(), out number))
             {
                 return "HR reading for step 4 is not valid!";
             }
 
-            else if (step5TB.Text.ToString().Length > 0 && !int.TryParse(step5TB.Text.ToString(), out number))
+            else if (txtStep5.Text.ToString().Length > 0 && !int.TryParse(txtStep5.Text.ToString(), out number))
             {
                 return "HR reading for step 5 is not valid!";
             }
             else
             {
-                return "OK";
+                if(txtSurname.Text.ToString().Length<1)
+                {
+                    txtSurname.Text = txtFirstName.Text.ToString();
+                }
+                    return "OK";
             }
             return "OK";
 
@@ -925,9 +985,9 @@ namespace StepTestSystem
         {
             //validateAge = false;
             int number;
-            bool type = int.TryParse(ageTB.Text.ToString(), out number);
+            bool type = int.TryParse(txtAge.Text.ToString(), out number);
 
-            if(ageTB.Text.ToString().Length<1)
+            if(txtAge.Text.ToString().Length<1)
             {
                 string message = "Please enter the age!";
                 string caption = "Error Detected in Input";
@@ -949,11 +1009,11 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                ageTB.Text = "";
+                txtAge.Text = "";
 
 
             }
-            else if(number<1 || number>100)
+            else if(number<15 || number>65)
             {
                 string message = "The entered age is not Valid!";
                 string caption = "Error Detected in Input";
@@ -963,7 +1023,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                ageTB.Text = "";
+                txtAge.Text = "";
 
             }
             else
@@ -982,7 +1042,7 @@ namespace StepTestSystem
             int number;
 
 
-            bool type = int.TryParse(step1TB.Text.ToString(), out number);
+            bool type = int.TryParse(txtStep1.Text.ToString(), out number);
 
             if (!type)
             {
@@ -994,7 +1054,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step1TB.Text = "";
+                txtStep1.Text = "";
 
 
             }
@@ -1008,7 +1068,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step1TB.Text = "";
+                txtStep1.Text = "";
 
             }
             else
@@ -1026,7 +1086,7 @@ namespace StepTestSystem
         {
             //validateStep2 = false;
             int number;
-            bool type = int.TryParse(step2TB.Text.ToString(), out number);
+            bool type = int.TryParse(txtStep2.Text.ToString(), out number);
             
             if (!type)
             {
@@ -1038,7 +1098,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step2TB.Text = "";
+                txtStep2.Text = "";
 
 
             }
@@ -1052,7 +1112,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step2TB.Text = "";
+                txtStep2.Text = "";
 
             }
             else
@@ -1072,7 +1132,7 @@ namespace StepTestSystem
         {
             //validateStep3 = false;
             int number;
-            bool type = int.TryParse(step3TB.Text.ToString(), out number);
+            bool type = int.TryParse(txtStep3.Text.ToString(), out number);
 
             if (!type)
             {
@@ -1084,7 +1144,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step3TB.Text = "";
+                txtStep3.Text = "";
 
 
             }
@@ -1098,7 +1158,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step3TB.Text = "";
+                txtStep3.Text = "";
 
             }
             else
@@ -1113,7 +1173,7 @@ namespace StepTestSystem
         {
             //validateStep4 = false;
             int number;
-            bool type = int.TryParse(step4TB.Text.ToString(), out number);
+            bool type = int.TryParse(txtStep4.Text.ToString(), out number);
             
             if (!type)
             {
@@ -1125,7 +1185,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step4TB.Text = "";
+                txtStep4.Text = "";
 
 
             }
@@ -1139,7 +1199,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step4TB.Text = "";
+                txtStep4.Text = "";
 
             }
             else
@@ -1152,7 +1212,7 @@ namespace StepTestSystem
         {
            // validateStep5 = false;
             int number;
-            bool type = int.TryParse(step5TB.Text.ToString(), out number);
+            bool type = int.TryParse(txtStep5.Text.ToString(), out number);
 
             if (!type)
             {
@@ -1164,7 +1224,7 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step5TB.Text = "";
+                txtStep5.Text = "";
 
 
             }
@@ -1178,13 +1238,52 @@ namespace StepTestSystem
                 // Displays the MessageBox.
 
                 result = MessageBox.Show(message, caption, buttons);
-                step5TB.Text = "";
+                txtStep5.Text = "";
 
             }
             else
             {
                // validateStep5 = true;
             } 
+        }
+
+        private void btnQuit_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void quitTSFile_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void resetTSFile_Click(object sender, EventArgs e)
+        {
+            slopMglobal = -50;
+            YcutBglobal = -50;
+
+            txtFirstName.Text = "";
+            txtSurname.Text = "";
+            rdbFemale.Checked = false;
+            rdbMale.Checked = true;
+            txtAge.Text = "";
+            txtRemarks.Text = "";
+            txtStep1.Text = "";
+            txtStep2.Text = "";
+            txtStep3.Text = "";
+            txtStep4.Text = "";
+            txtStep5.Text = "";
+            lblFitnessRating.Text = "";
+            lblAeroCap.Text = "";
+            pictureBox1.Image = Properties.Resources.graph2D_final0;
+            //pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+
+        }
+
+        private void enquireTSEdit_Click(object sender, EventArgs e)
+        {
+            formEnquire formEnquireNew = new formEnquire();
+            formEnquireNew.Show();
         }
     }
 }
